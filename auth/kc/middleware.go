@@ -11,11 +11,11 @@ import (
 
 // KeycloakConfig holds the necessary configuration for connecting to Keycloak.
 type KeycloakConfig struct {
-	URL      string
-	Realm    string
-	ClientID string
-	Secret   string
-	Protocol string // Optional, defaults to "openid-connect"
+	URL      string `json:"kc_url"`
+	Realm    string `json:"kc_realm"`
+	ClientID string `json:"kc_client_id"`
+	Secret   string `json:"kc_secret"`
+	Protocol string `json:"kc_protocol"` // Optional, defaults to "openid-connect"
 }
 
 // TokenResponse represents the response from Keycloak token endpoint.

@@ -6,9 +6,16 @@ import (
 	"os"
 )
 
-func kcmStart() {
+func kcmStart(filepath string) {
 
-	token, err := config.GetAccessToken()
+	// Load Keycloak configuration from file
+	kcmConfigRaw := core.loadConfig(filepath)
+
+	// Parse kcm config
+	kcmConfig = core.parseKCMConfig(kcmConfigRaw)
+
+	// Retrieve access token
+	token, err := kcmConfig.GetAccessToken()
 	if err != nil {
 		log.Fatalf("Error retrieving access token: %v", err)
 	}
@@ -22,6 +29,7 @@ func kcmStart() {
 	fmt.Println("Not Before Policy:", token.NotBeforePolicy)
 	fmt.Println("Session State:", token.SessionState)
 	fmt.Println("Scope:", token.Scope)
+
 }
 
 func main() {
@@ -30,7 +38,7 @@ func main() {
 	mode := "kc"
 
 	if mode == "kc" {
-		kcmStart()
+		kcmStart("config.json")
 	} else {
 		fmt.Println("Invalid mode.....")
 		os.Exit(1)

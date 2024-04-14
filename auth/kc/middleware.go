@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -89,16 +88,10 @@ func (kc *KeycloakConfig) IntrospectToken(tokenResponse *TokenResponse) (*TokenI
 	defer resp.Body.Close()
 
 	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-
-	// Print request and response details for debugging
-	fmt.Println("Request URL:", req.URL)
-	fmt.Println("Request Body:", data.Encode())
-	fmt.Println("Response Status:", resp.Status)
-	fmt.Println("Response Body:", string(body))
 
 	// Unmarshal the response into the TokenIntrospectionResponse struct
 	var introspectionResponse TokenIntrospectionResponse
@@ -107,4 +100,38 @@ func (kc *KeycloakConfig) IntrospectToken(tokenResponse *TokenResponse) (*TokenI
 	}
 
 	return &introspectionResponse, nil
+}
+
+// Logout invalidates the given refresh token in Keycloak.
+func (kc *KeycloakConfig) Logout(refreshToken string) error {
+	// Construct the URL for the logout endpoint
+	logoutURL := fmt.Sprintf("%s/realms/%s/protocol/%s/logout", kc.URL, kc.Realm, kc.Protocol)
+
+	// Prepare the data for the POST request
+	data := url.Values{}
+	data.Set("refresh_token", refreshToken)
+	data.Set("client_id", kc.ClientID)
+	data.Set("client_secret", kc.Secret)
+
+	// Create the HTTP request
+	req, err := http.NewRequest("POST", logoutURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// Initialize the HTTP client and send the request
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check if the response status code indicates success
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to logout, server responded with status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }

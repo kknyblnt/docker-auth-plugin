@@ -5,10 +5,10 @@ import (
 	"errors"
 	"io/ioutil"
 
-	kcm "github.com/kknyblnt/docker-auth-plugin/auth/kc"
+	kcm "docker-auth-plugin/auth/kc"
 )
 
-func loadConfig(filename string) (map[string]interface{}, error) {
+func LoadConfig(filename string) (map[string]interface{}, error) {
 	var config map[string]interface{}
 
 	file, err := ioutil.ReadFile(filename)
@@ -24,7 +24,7 @@ func loadConfig(filename string) (map[string]interface{}, error) {
 	return config, nil
 }
 
-func parseKCMConfig(c map[string]interface{}) (*kcm.KeycloakConfig, error) {
+func ParseKCMConfig(c map[string]interface{}) (*kcm.KeycloakConfig, error) {
 
 	jsonConfig, err := json.Marshal(c)
 	if err != nil {

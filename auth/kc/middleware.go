@@ -1,11 +1,11 @@
 package kcm
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -45,13 +45,23 @@ func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
 func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
 
-	data := fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", kc.ClientID, kc.Secret)
-	req, err := http.NewRequest("POST", url, bytes.NewBufferString(data))
+	//data := fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", kc.ClientID, kc.Secret)
+
+	//data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", kc.ClientID, kc.Secret))
+
+	data := strings.NewReader("client_id=docker-auth-plugin&client_secret=6pcUvS0gGQRIRYnvDRvFauDVv8FToZqC&grant_type=password&username=demouser&password=demouser")
+
+	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	fmt.Printf("Request URL: %s\n", req.URL)
+	fmt.Printf("Request Body: %s\n", data)
+	fmt.Println("Request Headers:", req.Header)
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -59,10 +69,14 @@ func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("Response Status: %s\n", resp.Status)
+	fmt.Printf("Response Headers: %v\n", resp.Header)
+	fmt.Printf("Response Body: %s\n", string(body))
 
 	var tokenResponse TokenResponse
 	if err := json.Unmarshal(body, &tokenResponse); err != nil {

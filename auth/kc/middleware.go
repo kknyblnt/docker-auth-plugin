@@ -4,36 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
-
-// KeycloakConfig holds the necessary configuration for connecting to Keycloak.
-type KeycloakConfig struct {
-	URL      string `json:"kc_url"`
-	Realm    string `json:"kc_realm"`
-	ClientID string `json:"kc_client_id"`
-	Secret   string `json:"kc_secret"`
-	Protocol string `json:"kc_protocol"` // Optional, defaults to "openid-connect"
-}
-
-type KeycloakCredentials struct {
-	Username string
-	Password string
-}
-
-// TokenResponse represents the response from Keycloak token endpoint.
-type TokenResponse struct {
-	AccessToken      string `json:"access_token"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-	RefreshToken     string `json:"refresh_token"`
-	TokenType        string `json:"token_type"`
-	NotBeforePolicy  int    `json:"not-before-policy"`
-	SessionState     string `json:"session_state"`
-	Scope            string `json:"scope"`
-}
 
 // NewKeycloakConfig creates a new KeycloakConfig with default protocol.
 func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
@@ -84,4 +60,51 @@ func (kc *KeycloakConfig) GetAccessToken(creds KeycloakCredentials) (*TokenRespo
 	}
 
 	return &tokenResponse, nil
+}
+
+// IntrospectToken introspects the validity and details of a given access token.
+func (kc *KeycloakConfig) IntrospectToken(tokenResponse *TokenResponse) (*TokenIntrospectionResponse, error) {
+	// Build the token introspection endpoint URL
+	introspectURL := fmt.Sprintf("%s/realms/%s/protocol/%s/token/introspect", kc.URL, kc.Realm, kc.Protocol)
+
+	// Data to be sent in the request body
+	data := url.Values{}
+	data.Set("token", tokenResponse.AccessToken)
+	data.Set("client_id", kc.ClientID)
+	data.Set("client_secret", kc.Secret)
+
+	// Create the request
+	req, err := http.NewRequest("POST", introspectURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// Send the request
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Print request and response details for debugging
+	fmt.Println("Request URL:", req.URL)
+	fmt.Println("Request Body:", data.Encode())
+	fmt.Println("Response Status:", resp.Status)
+	fmt.Println("Response Body:", string(body))
+
+	// Unmarshal the response into the TokenIntrospectionResponse struct
+	var introspectionResponse TokenIntrospectionResponse
+	if err := json.Unmarshal(body, &introspectionResponse); err != nil {
+		return nil, err
+	}
+
+	return &introspectionResponse, nil
 }

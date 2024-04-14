@@ -1,10 +1,11 @@
 package config
 
 import (
-	kcm "docker-auth-plugin/auth/kc"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+
+	kcm "github.com/kknyblnt/docker-auth-plugin/auth/kc"
 )
 
 func loadConfig(filename string) (map[string]interface{}, error) {

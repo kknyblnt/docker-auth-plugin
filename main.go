@@ -5,10 +5,11 @@ import (
 	"log"
 	"os"
 
+	kcm "docker-auth-plugin/auth/kc"
 	pluginconfig "docker-auth-plugin/core/config"
 )
 
-func kcmStart(filepath string) {
+func kcmStart(filepath string, username string, password string) {
 
 	// Load Keycloak configuration from file
 	configData, err := pluginconfig.LoadConfig("config.json")
@@ -20,7 +21,7 @@ func kcmStart(filepath string) {
 		log.Fatalf("Error parsing Keycloak config: %v", err)
 	}
 
-	tokenResponse, err := keycloakConfig.GetAccessToken()
+	tokenResponse, err := keycloakConfig.GetAccessToken(*kcm.NewKeycloakCredentials(username, password))
 	if err != nil {
 		log.Fatalf("Error getting access token: %v", err)
 	}
@@ -40,10 +41,13 @@ func kcmStart(filepath string) {
 func main() {
 	fmt.Println("Started.....")
 
-	mode := "debug"
+	mode := "kc"
 
 	if mode == "kc" {
-		kcmStart("config.json")
+		usernmame := "demouser"
+		password := "demouser"
+		kcmStart("config.json", usernmame, password)
+
 	}
 	if mode == "debug" {
 		fmt.Println("debug")

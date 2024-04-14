@@ -18,6 +18,11 @@ type KeycloakConfig struct {
 	Protocol string `json:"kc_protocol"` // Optional, defaults to "openid-connect"
 }
 
+type KeycloakCredentials struct {
+	Username string
+	Password string
+}
+
 // TokenResponse represents the response from Keycloak token endpoint.
 type TokenResponse struct {
 	AccessToken      string `json:"access_token"`
@@ -41,15 +46,18 @@ func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
 	}
 }
 
+func NewKeycloakCredentials(username, password string) *KeycloakCredentials {
+	return &KeycloakCredentials{
+		Username: username,
+		Password: password,
+	}
+}
+
 // GetAccessToken fetches the access token from Keycloak.
-func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
+func (kc *KeycloakConfig) GetAccessToken(creds KeycloakCredentials) (*TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
 
-	//data := fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", kc.ClientID, kc.Secret)
-
-	//data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", kc.ClientID, kc.Secret))
-
-	data := strings.NewReader("client_id=docker-auth-plugin&client_secret=6pcUvS0gGQRIRYnvDRvFauDVv8FToZqC&grant_type=password&username=demouser&password=demouser")
+	data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=password&username=%s&password=%s", kc.ClientID, kc.Secret, creds.Username, creds.Password))
 
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
@@ -57,10 +65,6 @@ func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	fmt.Printf("Request URL: %s\n", req.URL)
-	fmt.Printf("Request Body: %s\n", data)
-	fmt.Println("Request Headers:", req.Header)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
@@ -73,10 +77,6 @@ func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("Response Status: %s\n", resp.Status)
-	fmt.Printf("Response Headers: %v\n", resp.Header)
-	fmt.Printf("Response Body: %s\n", string(body))
 
 	var tokenResponse TokenResponse
 	if err := json.Unmarshal(body, &tokenResponse); err != nil {

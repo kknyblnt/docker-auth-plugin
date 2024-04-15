@@ -34,21 +34,23 @@ func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Res
 	}
 	log.Println("Access granted")
 
+	req_allowed := false
+
 	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerAdminRole) {
 		log.Println("Introspect response contains ADMIN realm role")
-		return authorization.Response{Allow: true}
+		req_allowed = true
 	}
 
 	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerRole) {
 		log.Println("Introspect response contains realm role")
-		return authorization.Response{Allow: true}
+		req_allowed = true
 	}
 
 	kcmHandleLogout(p.keycloakConfig, tokenResponse.RefreshToken)
-	return authorization.Response{Allow: false}
+	return authorization.Response{Allow: req_allowed}
 
 }
 
 func (p *DockerAuthPlugin) AuthZRes(req authorization.Request) authorization.Response {
-	return authorization.Response{Allow: true} // Implement as needed
+	return authorization.Response{Allow: true}
 }

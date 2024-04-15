@@ -2,11 +2,16 @@ package kcm
 
 // KeycloakConfig holds the necessary configuration for connecting to Keycloak.
 type KeycloakConfig struct {
-	URL      string `json:"kc_url"`
-	Realm    string `json:"kc_realm"`
-	ClientID string `json:"kc_client_id"`
-	Secret   string `json:"kc_secret"`
-	Protocol string `json:"kc_protocol"` // Optional, defaults to "openid-connect"
+	URL                  string `json:"kc_url"`
+	Realm                string `json:"kc_realm"`
+	ClientID             string `json:"kc_client_id"`
+	Secret               string `json:"kc_secret"`
+	Protocol             string `json:"kc_protocol"`
+	RealmDockerRole      string `json:"kc_realm_docker_role"`
+	RealmDockerAdminRole string `json:"kc_realm_docker_admin_role"`
+	Username             string
+	Password             string
+	CurrentKCToken       string
 }
 
 type KeycloakCredentials struct {

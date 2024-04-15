@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	fmt.Println("Started.....")
+	log.Println("kknyblnt/docker-auth-plugin started......")
 
 	mode := "kc"
 
@@ -36,8 +36,16 @@ func main() {
 			log.Fatalf("Error parsing Keycloak config: %v", err)
 		}
 
+		log.Println("Config loaded successfully")
+
+		keycloakConfig.Username = "demouser"
+		keycloakConfig.Password = "demouser"
+
 		plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
 		handler := authorization.NewHandler(plugin)
+
+		log.Println("Unix socket serve started...")
+
 		err = handler.ServeUnix(pluginSocket, gid)
 		if err != nil {
 			log.Fatalf("Error serving plugin: %v", err)

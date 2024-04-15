@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"log"
+	"slices"
 
 	kcm "docker-auth-plugin/auth/kc"
 
@@ -19,20 +20,33 @@ func NewDockerAuthPlugin(cfg *kcm.KeycloakConfig) *DockerAuthPlugin {
 }
 
 func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Response {
-	tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig, *kcm.NewKeycloakCredentials("demouser", "demouser")) // Placeholder credentials
+
+	tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig, *kcm.NewKeycloakCredentials(p.keycloakConfig.Username, p.keycloakConfig.Password))
 	if err != nil {
 		log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
 		return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
 	}
+	log.Println("Token granted")
+
 	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, tokenResponse)
 	if err != nil || !introspectResponse.Active {
 		return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
 	}
+	log.Println("Access granted")
 
-	// Check user permissions specific to the request...
-	// This is a simplified example; implement detailed checks as per your requirements.
+	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerAdminRole) {
+		log.Println("Introspect response contains ADMIN realm role")
+		return authorization.Response{Allow: true}
+	}
 
-	return authorization.Response{Allow: true}
+	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerRole) {
+		log.Println("Introspect response contains realm role")
+		return authorization.Response{Allow: true}
+	}
+
+	kcmHandleLogout(p.keycloakConfig, tokenResponse.RefreshToken)
+	return authorization.Response{Allow: false}
+
 }
 
 func (p *DockerAuthPlugin) AuthZRes(req authorization.Request) authorization.Response {

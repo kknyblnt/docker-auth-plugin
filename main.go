@@ -54,9 +54,6 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Username: %s\n", username)
-	fmt.Printf("Password: %s\n", password)
-
 	u, _ := user.Lookup("root")
 	gid, _ := strconv.Atoi(u.Gid)
 

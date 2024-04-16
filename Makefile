@@ -1,8 +1,3 @@
-
-
-
-all: bin
-
 bin:
 	go build -o docker-auth-plugin
 
@@ -18,4 +13,3 @@ priv-dev-run:
 
 clean:
 	rm -f docker-auth-plugin
-

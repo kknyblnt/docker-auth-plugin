@@ -81,6 +81,9 @@ func main() {
 		log.Fatalf("Error parsing Keycloak config: %v", err)
 	}
 
+	keycloakConfig.Username = username
+	keycloakConfig.Password = password
+
 	log.Println("Config loaded successfully")
 
 	plugin := plugin.NewDockerAuthPlugin(keycloakConfig)

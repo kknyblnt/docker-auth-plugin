@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"os/user"
 	"strconv"
 
@@ -16,43 +17,68 @@ const (
 	pluginSocket = "/run/docker/plugins/kknyblnt-docker-auth-plugin.sock"
 )
 
-func main() {
-	log.Println("kknyblnt/docker-auth-plugin started......")
-
-	mode := "kc"
-
-	if mode == "kc" {
-
-		flag.Parse()
-		u, _ := user.Lookup("root")
-		gid, _ := strconv.Atoi(u.Gid)
-
-		configData, err := pluginconfig.LoadConfig("config.json")
-		if err != nil {
-			log.Fatalf("Error loading config: %v", err)
-		}
-		keycloakConfig, err := pluginconfig.ParseKCMConfig(configData)
-		if err != nil {
-			log.Fatalf("Error parsing Keycloak config: %v", err)
-		}
-
-		log.Println("Config loaded successfully")
-
-		keycloakConfig.Username = "demouser"
-		keycloakConfig.Password = "demouser"
-
-		plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
-		handler := authorization.NewHandler(plugin)
-
-		log.Println("Unix socket serve started...")
-
-		err = handler.ServeUnix(pluginSocket, gid)
-		if err != nil {
-			log.Fatalf("Error serving plugin: %v", err)
-		}
+func getEnvOrFlag(envKey string, flagVal *string) string {
+	if value, exists := os.LookupEnv(envKey); exists {
+		return value
 	}
-	if mode == "debug" {
-		fmt.Println("debug")
+	return *flagVal
+}
+
+func main() {
+	log.Println("kknyblnt/docker-auth-plugin")
+
+	usernameFlag := flag.String("username", "", "Specifies the username (you can specify the username with the DOCKER_AUTH_PLUGIN_KC_USERNAME env variable)")
+	passwordFlag := flag.String("password", "", "Specifies the password (you can specify the password with the DOCKER_AUTH_PLUGIN_KC_PASSWORD env variable)")
+	flag.Parse()
+
+	username := getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_USERNAME", usernameFlag)
+	password := getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_PASSWORD", passwordFlag)
+
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go [OPTIONS]")
+		flag.PrintDefaults()
+		return
+	}
+
+	switch os.Args[1] {
+	case "--help":
+		fmt.Println("Usage: go run main.go [OPTIONS]")
+		flag.PrintDefaults()
+		return
+	}
+
+	if username == "" || password == "" {
+		fmt.Println("Error: Username or password not provided")
+		fmt.Println("Usage: go run main.go [OPTIONS]")
+		flag.PrintDefaults()
+		return
+	}
+
+	fmt.Printf("Username: %s\n", username)
+	fmt.Printf("Password: %s\n", password)
+
+	u, _ := user.Lookup("root")
+	gid, _ := strconv.Atoi(u.Gid)
+
+	configData, err := pluginconfig.LoadConfig("config.json")
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+	keycloakConfig, err := pluginconfig.ParseKCMConfig(configData)
+	if err != nil {
+		log.Fatalf("Error parsing Keycloak config: %v", err)
+	}
+
+	log.Println("Config loaded successfully")
+
+	plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
+	handler := authorization.NewHandler(plugin)
+
+	log.Println("Unix socket serve started...")
+
+	err = handler.ServeUnix(pluginSocket, gid)
+	if err != nil {
+		log.Fatalf("Error serving plugin: %v", err)
 	}
 
 }

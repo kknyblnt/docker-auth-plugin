@@ -8,7 +8,7 @@ import (
 	kcm "docker-auth-plugin/auth/kc"
 )
 
-func LoadConfig(filename string) (map[string]interface{}, error) {
+func LoadConfigFromFile(filename string) (map[string]interface{}, error) {
 	var config map[string]interface{}
 
 	file, err := ioutil.ReadFile(filename)

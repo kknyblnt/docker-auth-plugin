@@ -9,8 +9,8 @@ type KeycloakConfig struct {
 	Protocol             string `json:"kc_protocol"`
 	RealmDockerRole      string `json:"kc_realm_docker_role"`
 	RealmDockerAdminRole string `json:"kc_realm_docker_admin_role"`
-	Username             string
-	Password             string
+	Username             string `json:"username"`
+	Password             string `json:"password"`
 	CurrentKCToken       string
 }
 

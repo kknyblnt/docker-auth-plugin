@@ -1,11 +1,14 @@
 package main
 
 import (
+	api "docker-auth-plugin/core/api"
 	pluginconfig "docker-auth-plugin/core/config"
 	plugin "docker-auth-plugin/plugin"
 	"flag"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"os/user"
 	"strconv"
@@ -16,6 +19,7 @@ import (
 
 const (
 	pluginSocket = "/run/docker/plugins/kknyblnt-docker-auth-plugin.sock"
+	apiSocket    = "/run/docker/plugins/kknyblnt-docker-auth-plugin-api.sock"
 )
 
 func getEnvOrFlag(envKey string, flagVal *string) string {
@@ -33,6 +37,25 @@ func readSecureInput() string {
 		return ""
 	}
 	return string(bytePassword)
+}
+
+func serveApi() {
+	os.Remove(apiSocket)
+	http.HandleFunc("/login", api.LoginHandler)
+	http.HandleFunc("/logout", api.LogoutHandler)
+
+	server := http.Server{}
+
+	unixListener, err := net.Listen("unix", apiSocket)
+	if err != nil {
+		log.Fatalf("Failed to listen on UNIX socket: %v", err)
+	}
+
+	log.Printf("Server is listening on UNIX socket %s", apiSocket)
+	err = server.Serve(unixListener)
+	if err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
 }
 
 func main() {
@@ -72,7 +95,7 @@ func main() {
 	u, _ := user.Lookup("root")
 	gid, _ := strconv.Atoi(u.Gid)
 
-	configData, err := pluginconfig.LoadConfig(configFilePath)
+	configData, err := pluginconfig.LoadConfigFromFile(configFilePath)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
@@ -85,6 +108,9 @@ func main() {
 	keycloakConfig.Password = password
 
 	log.Println("Config loaded successfully")
+
+	log.Println("Serving api as go routine")
+	go serveApi()
 
 	plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
 	handler := authorization.NewHandler(plugin)

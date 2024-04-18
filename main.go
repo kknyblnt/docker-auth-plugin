@@ -40,6 +40,7 @@ func readSecureInput() string {
 }
 
 func serveApi() {
+	os.Remove(apiSocket)
 	http.HandleFunc("/login", api.LoginHandler)
 	http.HandleFunc("/logout", api.LogoutHandler)
 

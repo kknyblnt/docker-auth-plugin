@@ -72,7 +72,7 @@ func main() {
 	u, _ := user.Lookup("root")
 	gid, _ := strconv.Atoi(u.Gid)
 
-	configData, err := pluginconfig.LoadConfig(configFilePath)
+	configData, err := pluginconfig.LoadConfigFromFile(configFilePath)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}

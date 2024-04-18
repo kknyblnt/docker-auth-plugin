@@ -108,6 +108,9 @@ func main() {
 
 	log.Println("Config loaded successfully")
 
+	log.Println("Serving api as go routine")
+	go serveApi()
+
 	plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
 	handler := authorization.NewHandler(plugin)
 

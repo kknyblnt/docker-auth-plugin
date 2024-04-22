@@ -3,21 +3,22 @@ package api
 import (
 	kcm "docker-auth-plugin/auth/kc"
 	pluginconfig "docker-auth-plugin/core/config"
+	plugin "docker-auth-plugin/plugin"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(pluginData *plugin.AuthPlugin, w http.ResponseWriter, r *http.Request) {
+	log.Println("Login attempted")
 	username, password, ok := r.BasicAuth()
 	if !ok {
 		http.Error(w, "Invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
-	// Process Keycloak login data
 	var loginData kcm.KeycloakConfig
-	err := json.NewDecoder(r.Body).Decode(&loginData)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
 		http.Error(w, "Error parsing Keycloak data", http.StatusBadRequest)
 		return
 	}
@@ -35,29 +36,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Include username and password in the response for demonstration purposes (not recommended in production)
-	response := struct {
-		*kcm.KeycloakConfig
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{
-		KeycloakConfig: kcConfig,
-		Username:       username,
-		Password:       password,
-	}
+	plugin.LoginFlow()
 
-	responseData, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Error generating response", http.StatusInternalServerError)
-		return
-	}
+	var responseData []byte
 
+	responseData, _ = json.Marshal(map[string]string{"message": "Logged in successfully"})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseData)
 }
-
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	// Placeholder for logout logic
+func LogoutHandler(plugin *plugin.DockerAuthPlugin, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Logged out successfully"))
 }

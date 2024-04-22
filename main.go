@@ -1,6 +1,7 @@
 package main
 
 import (
+	kcm "docker-auth-plugin/auth/kc"
 	api "docker-auth-plugin/core/api"
 	pluginconfig "docker-auth-plugin/core/config"
 	plugin "docker-auth-plugin/plugin"
@@ -22,6 +23,9 @@ const (
 	apiSocket    = "/run/docker/plugins/kknyblnt-docker-auth-plugin-api.sock"
 )
 
+var Plugin *plugin.AuthPlugin
+var KeycloakConfig *kcm.KeycloakConfig
+
 func getEnvOrFlag(envKey string, flagVal *string) string {
 	if value, exists := os.LookupEnv(envKey); exists {
 		return value
@@ -30,10 +34,10 @@ func getEnvOrFlag(envKey string, flagVal *string) string {
 }
 
 func readSecureInput() string {
-	fmt.Println("(input hidden)")
+	log.Println("(input hidden)")
 	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
-		fmt.Println("Failed to read password")
+		log.Println("Failed to read password")
 		return ""
 	}
 	return string(bytePassword)
@@ -41,8 +45,8 @@ func readSecureInput() string {
 
 func serveApi() {
 	os.Remove(apiSocket)
-	http.HandleFunc("/login", api.LoginHandler)
-	http.HandleFunc("/logout", api.LogoutHandler)
+	http.HandleFunc(KeycloakConfig, "/login", api.LoginHandler)
+	http.HandleFunc(KeycloakConfig, "/logout", api.LogoutHandler)
 
 	server := http.Server{}
 
@@ -60,11 +64,11 @@ func serveApi() {
 
 func main() {
 	log.Println("kknyblnt/docker-auth-plugin")
-
 	usernameFlag := flag.String("username", "", "Specifies the username (you can specify the username with the DOCKER_AUTH_PLUGIN_KC_USERNAME env variable)")
 	passwordFlag := flag.String("password", "", "Specifies the password (you can specify the password with the DOCKER_AUTH_PLUGIN_KC_PASSWORD env variable)")
 	configFilePathFlag := flag.String("config", "", "Specifies the config file path, by default its PWD/config.json (you can specify the username with the DOCKER_AUTH_PLUGIN_KC_CONFIG env variable)")
 	readFlag := flag.Bool("read", false, "Reads username and password")
+	helpFlag := flag.Bool("help", false, "Prints out commands")
 
 	flag.Parse()
 
@@ -82,8 +86,7 @@ func main() {
 
 	configFilePath := getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_CONFIG", configFilePathFlag)
 
-	if username == "" || password == "" {
-		fmt.Println("Error: Username or password not provided")
+	if *helpFlag {
 		flag.PrintDefaults()
 		return
 	}
@@ -99,21 +102,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-	keycloakConfig, err := pluginconfig.ParseKCMConfig(configData)
+	KeycloakConfig, err := pluginconfig.ParseKCMConfig(configData)
 	if err != nil {
 		log.Fatalf("Error parsing Keycloak config: %v", err)
 	}
 
-	keycloakConfig.Username = username
-	keycloakConfig.Password = password
+	KeycloakConfig.Username = username
+	KeycloakConfig.Password = password
 
 	log.Println("Config loaded successfully")
 
-	log.Println("Serving api as go routine")
-	go serveApi()
+	Plugin = plugin.NewAuthPlugin(KeycloakConfig)
 
-	plugin := plugin.NewDockerAuthPlugin(keycloakConfig)
-	handler := authorization.NewHandler(plugin)
+	handler := authorization.NewHandler(Plugin.)
 
 	log.Println("Unix socket serve started...")
 
@@ -121,5 +122,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error serving plugin: %v", err)
 	}
+
+	log.Println("Serving api as go routine")
+	go serveApi()
 
 }

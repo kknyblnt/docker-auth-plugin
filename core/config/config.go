@@ -38,7 +38,7 @@ func ParseKCMConfig(c map[string]interface{}) (*kcm.KeycloakConfig, error) {
 	}
 
 	if kcConf.Protocol == "" {
-		kcConf.Protocol = "openid-connect" // Set default protocol if not specified
+		kcConf.Protocol = "openid-connect"
 	}
 	if kcConf.RealmDockerRole == "" {
 		kcConf.RealmDockerRole = "docker-auth-plugin-roles"

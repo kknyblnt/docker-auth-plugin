@@ -2,7 +2,6 @@ package plugin
 
 import (
 	kcm "docker-auth-plugin/auth/kc"
-	"fmt"
 	"log"
 )
 
@@ -27,8 +26,8 @@ func kcmHandleTokenIntrospect(keycloakConfig kcm.KeycloakConfig, getAccessTokenR
 func kcmHandleLogout(keycloakConfig *kcm.KeycloakConfig, refreshToken string) {
 	err := keycloakConfig.Logout(refreshToken)
 	if err != nil {
-		fmt.Println("Logout failed:", err)
+		log.Println("Logout failed:", err)
 	} else {
-		fmt.Println("Successfully logged out.")
+		log.Println("Successfully logged out.")
 	}
 }

@@ -47,8 +47,6 @@ func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Res
 		}
 		log.Println("Token granted")
 		p.keycloakConfig.CurrentKCToken = tokenResponse.AccessToken
-	} else {
-		log.Println("Already has token")
 	}
 	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, p.keycloakConfig.CurrentKCToken)
 	if err != nil || !introspectResponse.Active {

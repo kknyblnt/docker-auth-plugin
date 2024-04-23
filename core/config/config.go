@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 
 	kcm "docker-auth-plugin/auth/kc"
+
+	"github.com/denisbrodbeck/machineid"
 )
 
 func LoadConfig(filename string) (map[string]interface{}, error) {
@@ -41,10 +44,12 @@ func ParseKCMConfig(c map[string]interface{}) (*kcm.KeycloakConfig, error) {
 		kcConf.Protocol = "openid-connect" // Set default protocol if not specified
 	}
 	if kcConf.RealmDockerRole == "" {
-		kcConf.RealmDockerRole = "docker-auth-plugin-roles"
-	}
-	if kcConf.RealmDockerAdminRole == "" {
-		kcConf.RealmDockerAdminRole = "docker-auth-plugin-admin-roles"
+		id, err := machineid.ID()
+		if err != nil {
+			log.Println("Failed to retrieve hardver id, you must set kc_realm_docker_role manually in your config")
+			log.Fatal(err)
+		}
+		kcConf.RealmDockerRole = id
 	}
 
 	return &kcConf, nil

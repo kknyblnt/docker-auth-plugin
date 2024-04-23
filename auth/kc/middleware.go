@@ -21,18 +21,11 @@ func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
 	}
 }
 
-func NewKeycloakCredentials(username, password string) *KeycloakCredentials {
-	return &KeycloakCredentials{
-		Username: username,
-		Password: password,
-	}
-}
-
 // GetAccessToken fetches the access token from Keycloak.
-func (kc *KeycloakConfig) GetAccessToken(creds KeycloakCredentials) (*TokenResponse, error) {
+func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
 
-	data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=password&username=%s&password=%s", kc.ClientID, kc.Secret, creds.Username, creds.Password))
+	data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=password&username=%s&password=%s", kc.ClientID, kc.Secret, kc.Username, kc.Password))
 
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
@@ -62,13 +55,13 @@ func (kc *KeycloakConfig) GetAccessToken(creds KeycloakCredentials) (*TokenRespo
 }
 
 // IntrospectToken introspects the validity and details of a given access token.
-func (kc *KeycloakConfig) IntrospectToken(tokenResponse *TokenResponse) (*TokenIntrospectionResponse, error) {
+func (kc *KeycloakConfig) IntrospectToken(accessToken string) (*TokenIntrospectionResponse, error) {
 	// Build the token introspection endpoint URL
 	introspectURL := fmt.Sprintf("%s/realms/%s/protocol/%s/token/introspect", kc.URL, kc.Realm, kc.Protocol)
 
 	// Data to be sent in the request body
 	data := url.Values{}
-	data.Set("token", tokenResponse.AccessToken)
+	data.Set("token", accessToken)
 	data.Set("client_id", kc.ClientID)
 	data.Set("client_secret", kc.Secret)
 

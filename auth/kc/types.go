@@ -14,11 +14,6 @@ type KeycloakConfig struct {
 	CurrentKCToken       string
 }
 
-type KeycloakCredentials struct {
-	Username string
-	Password string
-}
-
 // TokenIntrospectionResponse represents the JSON structure returned from the token introspection endpoint.
 type TokenIntrospectionResponse struct {
 	Active            bool     `json:"active"`

@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-func kcmHandleGetAccessToken(keycloakConfig kcm.KeycloakConfig, creds kcm.KeycloakCredentials) (*kcm.TokenResponse, error) {
-	tokenResponse, err := keycloakConfig.GetAccessToken(*kcm.NewKeycloakCredentials(creds.Username, creds.Password))
+func kcmHandleGetAccessToken(keycloakConfig kcm.KeycloakConfig) (*kcm.TokenResponse, error) {
+	tokenResponse, err := keycloakConfig.GetAccessToken()
 	if err != nil {
 		log.Fatalf("Error getting access token: %v", err)
 		return nil, err

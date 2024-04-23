@@ -19,27 +19,20 @@ func NewDockerAuthPlugin(cfg *kcm.KeycloakConfig) *DockerAuthPlugin {
 	}
 }
 
-func GetToken(config kcm.KeycloakConfig) (*kcm.TokenResponse, error) {
-	tokenResponse, err := kcmHandleGetAccessToken(config)
-	if err != nil {
-		log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
-		return nil, err
-	}
-	log.Println("Token granted")
-}
-
-func LoginFlow()
-
 func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Response {
 
-	tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig)
-	if err != nil {
-		log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
-		return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
-	}
-	log.Println("Token granted")
+	if p.keycloakConfig.CurrentKCToken == "" {
 
-	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, tokenResponse)
+		tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig)
+		if err != nil {
+			log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
+			return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
+		}
+		log.Println("Token granted")
+		p.keycloakConfig.CurrentKCToken = tokenResponse.AccessToken
+	}
+
+	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, "")
 	if err != nil || !introspectResponse.Active {
 		return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
 	}

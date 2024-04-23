@@ -3,6 +3,7 @@ package plugin
 import (
 	"log"
 	"slices"
+	"time"
 
 	kcm "docker-auth-plugin/auth/kc"
 
@@ -19,40 +20,43 @@ func NewDockerAuthPlugin(cfg *kcm.KeycloakConfig) *DockerAuthPlugin {
 	}
 }
 
+func validateIntrospect(introspectResponse kcm.TokenIntrospectionResponse, keycloakConfig kcm.KeycloakConfig) bool {
+
+	if slices.Contains(introspectResponse.RealmAccess.Roles, keycloakConfig.RealmDockerAdminRole) {
+		log.Println("Introspect response contains ADMIN realm role")
+		return true
+	}
+
+	if slices.Contains(introspectResponse.RealmAccess.Roles, keycloakConfig.RealmDockerRole) {
+		log.Println("Introspect response contains realm role")
+		return true
+	}
+
+	return false
+}
+
+var AuthZFailureResponse = authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
+
 func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Response {
-
-	if p.keycloakConfig.CurrentKCToken == "" {
-
+	req_allowed := false
+	if p.keycloakConfig.CurrentKCToken == "" || time.Now().After(p.keycloakConfig.TokenExpiration) {
 		tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig)
 		if err != nil {
 			log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
-			return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
+			return AuthZFailureResponse
 		}
 		log.Println("Token granted")
 		p.keycloakConfig.CurrentKCToken = tokenResponse.AccessToken
+	} else {
+		log.Println("Already has token")
 	}
-
-	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, "")
+	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, p.keycloakConfig.CurrentKCToken)
 	if err != nil || !introspectResponse.Active {
-		return authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
+		return AuthZFailureResponse
 	}
-	log.Println("Access granted")
-
-	req_allowed := false
-
-	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerAdminRole) {
-		log.Println("Introspect response contains ADMIN realm role")
-		req_allowed = true
-	}
-
-	if slices.Contains(introspectResponse.RealmAccess.Roles, p.keycloakConfig.RealmDockerRole) {
-		log.Println("Introspect response contains realm role")
-		req_allowed = true
-	}
-
-	kcmHandleLogout(p.keycloakConfig, tokenResponse.RefreshToken)
+	p.keycloakConfig.TokenExpiration = time.Unix(int64(introspectResponse.Exp), 0)
+	req_allowed = validateIntrospect(*introspectResponse, *p.keycloakConfig)
 	return authorization.Response{Allow: req_allowed}
-
 }
 
 func (p *DockerAuthPlugin) AuthZRes(req authorization.Request) authorization.Response {

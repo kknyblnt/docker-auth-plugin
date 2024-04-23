@@ -1,5 +1,7 @@
 package kcm
 
+import "time"
+
 // KeycloakConfig holds the necessary configuration for connecting to Keycloak.
 type KeycloakConfig struct {
 	URL                  string `json:"kc_url"`
@@ -12,6 +14,7 @@ type KeycloakConfig struct {
 	Username             string
 	Password             string
 	CurrentKCToken       string
+	TokenExpiration      time.Time
 }
 
 // TokenIntrospectionResponse represents the JSON structure returned from the token introspection endpoint.

@@ -22,6 +22,7 @@ func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
 }
 
 // GetAccessToken fetches the access token from Keycloak.
+// GetAccessToken fetches the access token from Keycloak.
 func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
 
@@ -44,6 +45,18 @@ func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if the response is an error message
+	if resp.StatusCode != http.StatusOK {
+		var apiError map[string]string
+		if err := json.Unmarshal(body, &apiError); err != nil {
+			return nil, fmt.Errorf("failed to parse error response: %v", err)
+		}
+		if apiError["error_description"] == "Account is not fully set up" {
+			return nil, fmt.Errorf("account setup incomplete: %s", apiError["error_description"])
+		}
+		return nil, fmt.Errorf("authentication error: %s", apiError["error_description"])
 	}
 
 	var tokenResponse TokenResponse

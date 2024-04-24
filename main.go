@@ -42,19 +42,23 @@ func main() {
 	passwordFlag := flag.String("password", "", "Specifies the password (you can specify the password with the DOCKER_AUTH_PLUGIN_KC_PASSWORD env variable)")
 	configFilePathFlag := flag.String("config", "", "Specifies the config file path, by default its PWD/config.json (you can specify the username with the DOCKER_AUTH_PLUGIN_KC_CONFIG env variable)")
 	readFlag := flag.Bool("read", false, "Reads username and password")
+	otpFlag := flag.String("otp", "", "Specifies the one-time-password (you can specify the one-time-password with the DOCKER_AUTH_PLUGIN_KC_OTP env variable)")
 
 	flag.Parse()
 
-	var username, password string
+	var username, password, otp string
 
 	if *readFlag {
 		fmt.Print("Enter Username: ")
 		username = readSecureInput()
 		fmt.Print("Enter Password: ")
 		password = readSecureInput()
+		fmt.Printf("Enter 2FA OTP: (LEAVE IT EMPTY IF YOU DON'T USE 2FA)")
+		otp = readSecureInput()
 	} else {
 		username = getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_USERNAME", usernameFlag)
 		password = getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_PASSWORD", passwordFlag)
+		otp = getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_OTP", otpFlag)
 	}
 
 	configFilePath := getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_CONFIG", configFilePathFlag)
@@ -83,6 +87,7 @@ func main() {
 
 	keycloakConfig.Username = username
 	keycloakConfig.Password = password
+	keycloakConfig.Otp = otp
 
 	log.Println("Config loaded successfully")
 

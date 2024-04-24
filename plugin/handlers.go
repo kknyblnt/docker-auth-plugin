@@ -18,7 +18,7 @@ func kcmHandleGetAccessToken(keycloakConfig kcm.KeycloakConfig) (*kcm.TokenRespo
 func kcmHandleTokenIntrospect(keycloakConfig kcm.KeycloakConfig, accessToken string) (*kcm.TokenIntrospectionResponse, error) {
 	introspectResponse, err := keycloakConfig.IntrospectToken(accessToken)
 	if err != nil {
-		log.Fatalf("Error getting access token: %v", err)
+		log.Fatalf("Error introspecting: %v", err)
 		return nil, err
 	}
 	return introspectResponse, nil

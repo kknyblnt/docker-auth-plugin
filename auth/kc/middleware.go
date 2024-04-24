@@ -24,11 +24,19 @@ func NewKeycloakConfig(url, realm, clientID, secret string) *KeycloakConfig {
 // GetAccessToken fetches the access token from Keycloak.
 // GetAccessToken fetches the access token from Keycloak.
 func (kc *KeycloakConfig) GetAccessToken() (*TokenResponse, error) {
-	url := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
+	getTokenUrl := fmt.Sprintf("%s/realms/%s/protocol/%s/token", kc.URL, kc.Realm, kc.Protocol)
 
-	data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=password&username=%s&password=%s", kc.ClientID, kc.Secret, kc.Username, kc.Password))
+	//	data := strings.NewReader(fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=password&username=%s&password=%s", kc.ClientID, kc.Secret, kc.Username, kc.Password))
 
-	req, err := http.NewRequest("POST", url, data)
+	data := url.Values{}
+	data.Set("client_id", kc.ClientID)
+	data.Set("client_secret", kc.Secret)
+	data.Set("grant_type", "password")
+	data.Set("username", kc.Username)
+	data.Set("password", kc.Password)
+	data.Set("totp", kc.Otp)
+
+	req, err := http.NewRequest("POST", getTokenUrl, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}

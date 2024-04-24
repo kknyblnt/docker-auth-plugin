@@ -13,6 +13,7 @@ type KeycloakConfig struct {
 	RealmDockerAdminRole string `json:"kc_realm_docker_admin_role"`
 	Username             string
 	Password             string
+	Otp                  string
 	CurrentKCToken       string
 	TokenExpiration      time.Time
 }

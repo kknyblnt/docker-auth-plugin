@@ -38,6 +38,14 @@ func validateIntrospect(introspectResponse kcm.TokenIntrospectionResponse, keycl
 var AuthZFailureResponse = authorization.Response{Allow: false, Msg: "Access denied by kknyblnt/docker-auth-plugin"}
 
 func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Response {
+
+	if p.keycloakConfig.Username == "" {
+		return AuthZFailureResponse
+	}
+	if p.keycloakConfig.Password == "" {
+		return AuthZFailureResponse
+	}
+
 	req_allowed := false
 	if p.keycloakConfig.CurrentKCToken == "" || time.Now().After(p.keycloakConfig.TokenExpiration) {
 		tokenResponse, err := kcmGetAccessToken(*p.keycloakConfig)

@@ -43,10 +43,16 @@ func main() {
 	configFilePathFlag := flag.String("config", "", "Specifies the config file path, by default its PWD/config.json (you can specify the username with the DOCKER_AUTH_PLUGIN_KC_CONFIG env variable)")
 	readFlag := flag.Bool("read", false, "Reads username and password")
 	otpFlag := flag.String("otp", "", "Specifies the one-time-password (you can specify the one-time-password with the DOCKER_AUTH_PLUGIN_KC_OTP env variable)")
+	helpFlag := flag.Bool("help", false, "Display this help and exit")
 
 	flag.Parse()
 
 	var username, password, otp string
+
+	if *helpFlag {
+		flag.PrintDefaults()
+		return
+	}
 
 	if *readFlag {
 		fmt.Print("Enter Username: ")
@@ -62,12 +68,6 @@ func main() {
 	}
 
 	configFilePath := getEnvOrFlag("DOCKER_AUTH_PLUGIN_KC_CONFIG", configFilePathFlag)
-
-	if username == "" || password == "" {
-		fmt.Println("Error: Username or password not provided")
-		flag.PrintDefaults()
-		return
-	}
 
 	if configFilePath == "" {
 		configFilePath = "config.json"

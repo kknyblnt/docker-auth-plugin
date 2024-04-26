@@ -40,7 +40,7 @@ var AuthZFailureResponse = authorization.Response{Allow: false, Msg: "Access den
 func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Response {
 	req_allowed := false
 	if p.keycloakConfig.CurrentKCToken == "" || time.Now().After(p.keycloakConfig.TokenExpiration) {
-		tokenResponse, err := kcmHandleGetAccessToken(*p.keycloakConfig)
+		tokenResponse, err := kcmGetAccessToken(*p.keycloakConfig)
 		if err != nil {
 			log.Printf("Authorization failed (probably a KC failure while getting access token): %v", err)
 			return AuthZFailureResponse
@@ -48,7 +48,7 @@ func (p *DockerAuthPlugin) AuthZReq(req authorization.Request) authorization.Res
 		log.Println("Token granted")
 		p.keycloakConfig.CurrentKCToken = tokenResponse.AccessToken
 	}
-	introspectResponse, err := kcmHandleTokenIntrospect(*p.keycloakConfig, p.keycloakConfig.CurrentKCToken)
+	introspectResponse, err := kcmtokenIntrospect(*p.keycloakConfig, p.keycloakConfig.CurrentKCToken)
 	if err != nil || !introspectResponse.Active {
 		return AuthZFailureResponse
 	}

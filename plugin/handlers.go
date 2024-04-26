@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func kcmHandleGetAccessToken(keycloakConfig kcm.KeycloakConfig) (*kcm.TokenResponse, error) {
+func kcmGetAccessToken(keycloakConfig kcm.KeycloakConfig) (*kcm.TokenResponse, error) {
 	tokenResponse, err := keycloakConfig.GetAccessToken()
 	if err != nil {
 		log.Fatalf("Error getting access token: %v", err)
@@ -15,7 +15,7 @@ func kcmHandleGetAccessToken(keycloakConfig kcm.KeycloakConfig) (*kcm.TokenRespo
 	return tokenResponse, nil
 }
 
-func kcmHandleTokenIntrospect(keycloakConfig kcm.KeycloakConfig, accessToken string) (*kcm.TokenIntrospectionResponse, error) {
+func kcmtokenIntrospect(keycloakConfig kcm.KeycloakConfig, accessToken string) (*kcm.TokenIntrospectionResponse, error) {
 	introspectResponse, err := keycloakConfig.IntrospectToken(accessToken)
 	if err != nil {
 		log.Fatalf("Error introspecting: %v", err)
@@ -24,7 +24,7 @@ func kcmHandleTokenIntrospect(keycloakConfig kcm.KeycloakConfig, accessToken str
 	return introspectResponse, nil
 }
 
-func kcmHandleLogout(keycloakConfig *kcm.KeycloakConfig, refreshToken string) {
+func kcmLogout(keycloakConfig *kcm.KeycloakConfig, refreshToken string) {
 	err := keycloakConfig.Logout(refreshToken)
 	if err != nil {
 		fmt.Println("Logout failed:", err)
